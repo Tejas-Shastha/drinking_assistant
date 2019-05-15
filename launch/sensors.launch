@@ -2,11 +2,11 @@
 <launch>
 
     <arg name="port" default="_ESP32_force"/>
-    <!--arg name="usb_port" default="/dev/ttyUSB$(arg port)" /-->
     <arg name="usb_port" default="/dev/ttyUSB_ESP32_force" />
 
     <!-- Start the force sensors. If not working, check port name, battery in cup, connector pins and reconnect everything in order CUP->PC -->
     <node pkg="rosserial_python" type="serial_node.py" name="force_rosserial" output="screen">
+        <!--Replace usb_port with port if using full port name-->
         <param name="port" value="$(arg usb_port)" />
         <param name="baud" value="230400" />
     </node>

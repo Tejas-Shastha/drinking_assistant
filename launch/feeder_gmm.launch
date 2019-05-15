@@ -2,14 +2,7 @@
 <launch>
     <!--include file="$(find tejas)/launch/drink_motion.launch" /-->
 
-
-    <arg name="name"/>
-
-    <arg name="user"/>
-
     <node name="feeder_gmm" pkg="drinking_assistant" type="feeder_gmm"
         args="$(find drinking_assistant)/resources/gmm/gmr.csv" output="screen"/>
-
-
 
 </launch>

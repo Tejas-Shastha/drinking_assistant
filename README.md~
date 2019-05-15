@@ -101,43 +101,7 @@ This was one of the earlier nodes written to test out TF on the JACO. Used for d
 This was one of the earlier nodes written to test out the velocity controller by Kinova and the targeted velocity drive used for most other nodes. Used for development purposes only.
 
 
-## PYTHON SCRIPTS
-
-These scripts serve mostly the Reinforcement Learning part and so do not actually run with the robot. They are used for development only.
-
-* `csv_interface.py`   
-
-Serves as a library used by other scripts to read/write CSV files on the disk.
-
-* `env.py`   
-
-This is the Markov Model of the drinking assistant robot. Does not run directly but is invoked by other scripts.
-
-* `feeder_xx_training.py`    
-
-This set of scripts contains the training program for the respective algorithm. Make use of the model, csv interface and the robot emulator. Suggested to use the launch files instead of running these scripts.
-
-* `gmm_equalizer.py`   
-
-This script is used to prepare the data files for training the GMM.
-
-* `robot_emulator_server.py`
-
-The main part of the emulator. This script runs as the server providing the emulation service.
-
-* `robot_emulator_client.py`
-
-This script provides the interface of making use of the amulator. Is invoked by other scripts and its functions are made use of by the training scripts.
-
-* `test_model_xx.üy`
-
-These scripts can be used to test the training procedure before actually starting it as well as the validity of model and emulator.
-
-## RESOURCES
-
-the `./resources` directory contains some useful files for other nodes to function such as the optimum policies, the DQN model, the performance metrics etc...
-
-
+##
 
 
 
