@@ -7,7 +7,7 @@
             <arg name="output" value="screen" />
         </include>
 
-        <node name="robot_control2" pkg="tejas" type="robot_control2" args="0.01" output="screen"/>
+        <node name="robot_control2" pkg="drinking_assistant" type="robot_control2" args="0.01" output="screen"/>
 
         <!--node name="tf_caster" pkg="tejas" type="tf_caster" output="screen"/-->
 

@@ -1,2 +1,1 @@
-# tejas
-Testing the kinova robot 
+TODO

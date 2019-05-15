@@ -4,11 +4,11 @@
 <arg name="episodes" default="400" />
 
 	<!-- Start the service server first -->
-  <node pkg="tejas" type="robot_emulator_server.py" name="emulator_service" />
-  <node pkg="tejas" 
+  <node pkg="drinking_assistant" type="robot_emulator_server.py" name="emulator_service" />
+  <node pkg="drinking_assistant"
         type="feeder_q_training.py" 
         name="q_training" 
-        args="$(find tejas)/resources/Q_table.csv $(find tejas)/resources/Q_policy.csv $(arg episodes) $(find tejas)/resources/Q_performance.csv"
+        args="$(find drinking_assistant)/resources/Q_table.csv $(find drinking_assistant)/resources/Q_policy.csv $(arg episodes) $(find drinking_assistant)/resources/Q_performance.csv"
         output="screen" />
 
 </launch>

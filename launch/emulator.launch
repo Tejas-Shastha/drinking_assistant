@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
 <launch>
 	<!-- Start the service server first -->
-  	<node pkg="tejas" type="robot_emulator_server.py" name="emulator_service" output="screen"/>
+        <node pkg="drinking_assistant" type="robot_emulator_server.py" name="emulator_service" output="screen"/>
 </launch>

@@ -6,17 +6,17 @@
 <arg name="loss" default="0.0001" />
 
 	<!-- Start the service server first -->
-  <node pkg="tejas" type="robot_emulator_server.py" name="emulator_service" />
-  <node pkg="tejas" 
+  <node pkg="drinking_assistant" type="robot_emulator_server.py" name="emulator_service" />
+  <node pkg="drinking_assistant"
         type="feeder_dqn_training.py" 
         name="dqn_training" 
-        args="$(find tejas)/resources/DQN_policy.csv 
-              $(find tejas)/resources/DQN_model.json 
-              $(find tejas)/resources/DQN_model.h5 
+        args="$(find drinking_assistant)/resources/DQN_policy.csv
+              $(find drinking_assistant)/resources/DQN_model.json
+              $(find drinking_assistant)/resources/DQN_model.h5
               $(arg episodes)
               $(arg steps)
               $(arg loss)
-              $(find tejas)/resources/DQN_performance.csv"
+              $(find drinking_assistant)/resources/DQN_performance.csv"
         output="screen" />
 
 </launch>

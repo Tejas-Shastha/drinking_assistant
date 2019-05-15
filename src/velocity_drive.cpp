@@ -114,6 +114,55 @@ void getRPYFromQuaternionMSG(geometry_msgs::Quaternion orientation, double& roll
   //ROS_INFO_STREAM("Converted R: " << roll << " P: " << pitch << " Y: " << yaw);
 }
 
+void printRoll(std::string text)
+{
+  ros::spinOnce();
+  lock_pose.lock();
+  geometry_msgs::PoseStamped initial_pose=current_pose;
+  lock_pose.unlock();
+
+  double r,p,y;
+  getRPYFromQuaternionMSG(initial_pose.pose.orientation,r,p,y);
+  lower_angle_thresh = r;
+  ROS_INFO_STREAM(text << angles::to_degrees(lower_angle_thresh));
+}
+
+void printPitch(std::string text)
+{
+  ros::spinOnce();
+  lock_pose.lock();
+  geometry_msgs::PoseStamped initial_pose=current_pose;
+  lock_pose.unlock();
+
+  double r,p,y;
+  getRPYFromQuaternionMSG(initial_pose.pose.orientation,r,p,y);
+  lower_angle_thresh = p;
+  ROS_INFO_STREAM(text << angles::to_degrees(lower_angle_thresh));
+}
+
+
+void printRPYCurrent(std::string text)
+{
+  ros::spinOnce();
+  lock_pose.lock();
+  geometry_msgs::PoseStamped initial_pose=current_pose;
+  lock_pose.unlock();
+
+  double r,p,y;
+  getRPYFromQuaternionMSG(initial_pose.pose.orientation,r,p,y);
+
+  ROS_INFO_STREAM(text << " R: " << angles::to_degrees(r)
+                  << " P: " << angles::to_degrees(p)
+                  << " Y: " << angles::to_degrees(y));
+}
+
+void printRPY(std::string text, double roll, double pitch, double yaw)
+{
+  ROS_INFO_STREAM(text << " R: " << angles::to_degrees(roll)
+                  << " P: " << angles::to_degrees(pitch)
+                  << " Y: " << angles::to_degrees(yaw));
+}
+
 
 void poseGrabber(geometry_msgs::PoseStamped pose)
 {
@@ -209,20 +258,86 @@ void driveToRollGoalWithVelocity(int direction)
 
 }
 
-
-
-void printRoll(std::string text)
+void driveToPitchGoalWithVelocity(int direction)
 {
-  ros::spinOnce();
+  if(direction == RAISE_CUP)
+    ROS_INFO_STREAM("Raise Cup");
+  else if (direction == LOWER_CUP)
+    ROS_INFO_STREAM("Lower Cup");
+  else
+  {
+    ROS_ERROR_STREAM("Wrong direction given!!");
+    return;
+  }
+
+  geometry_msgs::PoseStamped start_pose, goal_pose, temp_pose;
+
   lock_pose.lock();
-  geometry_msgs::PoseStamped initial_pose=current_pose;
+  start_pose=current_pose;
   lock_pose.unlock();
 
-  double r,p,y;
-  getRPYFromQuaternionMSG(initial_pose.pose.orientation,r,p,y);
-  lower_angle_thresh = r;
-  ROS_INFO_STREAM(text << angles::to_degrees(lower_angle_thresh));
+  double temp_rol, temp_pit, temp_yaw;
+  double goal_rol, goal_pit, goal_yaw;
+  double start_rol, start_pit, start_yaw;
+  double del_pitch;
+
+  goal_pose = start_pose;
+
+  tf::Quaternion q_rot = tf::createQuaternionFromRPY(angles::from_degrees(0),angles::from_degrees(0),angles::from_degrees( direction==RAISE_CUP?-ROTATION_STEP:ROTATION_STEP)); // Change Pitch angle
+  tf::Quaternion q_start; tf::quaternionMsgToTF(start_pose.pose.orientation, q_start);
+  tf::Quaternion q_goal = q_start*q_rot;
+
+  tf::quaternionTFToMsg(q_goal,goal_pose.pose.orientation);
+
+  ros::Rate loop_rate(100);
+  //ros::Time start = ros::Time::now();
+  while(ros::ok())
+  {
+    lock_pose.lock();
+    temp_pose = current_pose;
+    lock_pose.unlock();
+
+    getRPYFromQuaternionMSG(goal_pose.pose.orientation, goal_rol, goal_pit, goal_yaw);
+    getRPYFromQuaternionMSG(temp_pose.pose.orientation, temp_rol, temp_pit, temp_yaw);
+    getRPYFromQuaternionMSG(start_pose.pose.orientation, start_rol, start_pit, start_yaw);
+
+    printRPY("goal", goal_rol, goal_pit, goal_yaw);
+    printRPY("temp", temp_rol, temp_pit, temp_yaw);
+    printRPY("start", start_rol, start_pit, start_yaw);
+
+    del_pitch = goal_pit - temp_pit;
+    ROS_INFO_STREAM("Goal_P: " << angles::to_degrees(goal_pit) << " Temp_P: " << angles::to_degrees(temp_pit) << " Del_P: " << del_pitch << " Thresh_A: " << thresh_ang);
+
+    if (std::fabs(del_pitch)>=thresh_ang)
+    {
+      ROS_INFO_STREAM("Publishing velocity command");
+      geometry_msgs::TwistStamped twist_msg;
+      twist_msg.twist.linear.x = 0;
+      twist_msg.twist.linear.y = 0;
+      // Comment out next line ONLY if using end-effector mode ie: Mode 1 on jostick is active and 4th blue LED on far right is active.
+//      twist_msg.twist.linear.z = direction == LOWER_CUP? -thresh_lin : thresh_lin;
+      twist_msg.twist.angular.x = 0;
+      twist_msg.twist.angular.z= del_pitch>0?-VEL_ANG_MAX:VEL_ANG_MAX;
+      twist_msg.twist.angular.y= 0;
+
+      cmd_vel.publish(twist_msg);
+
+    }
+    else
+    {
+      ROS_INFO_STREAM("Goal reached, breaking loop");
+      break;
+    }
+
+    ros::spinOnce();
+    loop_rate.sleep();
+  }
+
 }
+
+
+
+
 
 int main(int argc, char **argv)
 {
@@ -253,35 +368,11 @@ int main(int argc, char **argv)
 
   ROS_INFO("Valid pose available");
 
-
-//  for (int i =0; i<5; i++)
-
-//  {
-//    printRoll("Roll before change ");
-
-//    driveToRollGoalWithVelocity(RAISE_CUP);
-
-//    printRoll("Roll after change, pre pause ");
-//    sleep(0.7);
-//    printRoll("Roll after change, post pause ");
-//    ROS_INFO("----------------------");
-
-
-//    printRoll("Roll before change");
-
-//    driveToRollGoalWithVelocity(LOWER_CUP);
-
-//    //printRoll("Roll after change, pre pause ");
-//    sleep(0.7);
-//    printRoll("Roll after change, post pause ");
-//    ROS_INFO("----------------------");
-//  }
-
-  printRoll("Roll before change ");
-  driveToRollGoalWithVelocity(RAISE_CUP);
-  printRoll("Roll after change, pre pause ");
-  sleep(1.0);
-  printRoll("Roll after change, post pause ");
+  printPitch("Pitch before change ");
+  driveToPitchGoalWithVelocity(LOWER_CUP);
+  printPitch("Pitch after change, pre pause ");
+//  sleep(1.0);
+//  printPitch("Pitch after change, post pause ");
 
 
 

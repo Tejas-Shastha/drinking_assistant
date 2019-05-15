@@ -5,10 +5,10 @@
 
     <arg name="user"/>
 
-    <!--node pkg="rosbag" type="record" name="rosbag_record" args="-a -o /media/tejas/Elements/post_development_study/rosbags/$(arg user)/force_$(arg name)" />
-    <node pkg="tejas" type="data_extractor" name="data_extractor" args="$(arg user) force_$(arg name)" output="screen"/-->
+    <!--node pkg="rosbag" type="record" name="rosbag_record" args="-a -o /media/drinking_assistant/Elements/post_development_study/rosbags/$(arg user)/force_$(arg name)" />
+    <node pkg="drinking_assistant" type="data_extractor" name="data_extractor" args="$(arg user) force_$(arg name)" output="screen"/-->
 
-    <node pkg="tejas" type="feeder_straight_1D" name="feeder_straight_1D" output="screen">
+    <node pkg="drinking_assistant" type="feeder_straight_1D" name="feeder_straight_1D" output="screen">
     </node>
 
 

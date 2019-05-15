@@ -11,13 +11,16 @@
 #include <std_msgs/String.h>
 
 #define POSE_CONTROL_CLIENT_SERVER_ADDRESS "/j2s7s300_driver/pose_action/tool_pose"
+#define JOINT_CONTROL_CLIENT_SERVER_ADDRESS "/j2s7s300_driver/joints_action/joint_angles"
 #define POSE_CONTROL_CLIENT_SERVER_TIMEOUT 3// s
+#define JOINT_CONTROL_CLIENT_SERVER_TIMEOUT 3// s
 #define STANDART_VEL_CMD_TIMEOUT  (0.5) // s
 
 // State of robots control
 typedef enum State_{
   VELOCITY_CONTROL,
   POSITION_CONTROL,
+  JOINT_CONTROL,
   STOPPED,
   NO_STATE,
 } State;
@@ -28,6 +31,7 @@ ros::Time poseVel_time; // time of the latest velocity command OR set to now-tim
 ros::Duration poseVel_timeout(STANDART_VEL_CMD_TIMEOUT); // timeout for velocity commands
 std::mutex poseVel_lock;  // Lock to make all global variables thread safe
 actionlib::SimpleActionClient<kinova_msgs::ArmPoseAction> *poseControlClient_ptr; // pointer to position control actionclient
+actionlib::SimpleActionClient<kinova_msgs::ArmJointAnglesAction> *jointControlClient_ptr; // pointer to joint control actionclient
 
 
 /**
@@ -51,8 +55,11 @@ void poseVelocity_rawCallback(geometry_msgs::TwistStamped twist){
   poseVelCmd.twist_angular_x = twist.twist.angular.x;
   poseVelCmd.twist_angular_y = twist.twist.angular.y;
   poseVelCmd.twist_angular_z = twist.twist.angular.z;
-  if(currentState == POSITION_CONTROL)
+  if(currentState == POSITION_CONTROL || currentState==JOINT_CONTROL)
+  {
+    jointControlClient_ptr->cancelAllGoals();
     poseControlClient_ptr->cancelAllGoals();
+  }
   if(!poseVelCmd.twist_linear_x && !poseVelCmd.twist_linear_y && !poseVelCmd.twist_linear_z && !poseVelCmd.twist_angular_x && !poseVelCmd.twist_angular_y && !poseVelCmd.twist_angular_z)
     currentState = STOPPED; // If all velocities are set to zero, set current State to Stopped
   else
@@ -66,6 +73,13 @@ void poseVelocity_rawCallback(geometry_msgs::TwistStamped twist){
 void goalDoneCallback(actionlib::SimpleClientGoalState state, kinova_msgs::ArmPoseResultConstPtr result){
   poseVel_lock.lock();
   if(currentState == POSITION_CONTROL)
+    currentState = STOPPED;
+  poseVel_lock.unlock();
+}
+
+void jointGoalDoneCallback(actionlib::SimpleClientGoalState state, kinova_msgs::ArmJointAnglesActionGoal result){
+  poseVel_lock.lock();
+  if(currentState == JOINT_CONTROL)
     currentState = STOPPED;
   poseVel_lock.unlock();
 }
@@ -96,6 +110,17 @@ void poseGoal_rawCallback(geometry_msgs::PoseStamped pose){
   poseVel_lock.unlock();
 }
 
+void jointGoal_rawCallback(kinova_msgs::ArmJointAnglesActionGoal goal){
+  // Create goal to send to system
+  goal.header = std_msgs::Header();
+  goal.header.frame_id = "j2s7s300_link_base"; // define frame to be the robot's base
+  goal.header.stamp = ros::Time::now();
+  poseVel_lock.lock();
+//  jointControlClient_ptr->sendGoal(goal, jointGoalDoneCallback);// // send new joint command
+  currentState = JOINT_CONTROL;
+  poseVel_lock.unlock();
+}
+
 /**
  * @brief Publishes the state of current control if it changed. Currently publishes via ROS_INFO
  * @param status_pub The publisher to send data with
@@ -105,6 +130,7 @@ void publishState(const ros::Publisher &status_pub){
   const std::map<State, std::string> publishData = {
     {VELOCITY_CONTROL, "Velocity Control"},
     {POSITION_CONTROL, "Position Control"},
+    {JOINT_CONTROL, "Joint Control"},
     {STOPPED, "Stopped"}
   };
   if(lastState != currentState){
@@ -134,8 +160,18 @@ int main(int argc, char **argv)
     ROS_ERROR("Robot Control failing to connect to actionlib client for position control. Aborting");
     return 0;
   }
+
+  actionlib::SimpleActionClient<kinova_msgs::ArmJointAnglesAction> jointControlClient(JOINT_CONTROL_CLIENT_SERVER_ADDRESS);
+  jointControlClient_ptr = &jointControlClient;
+  if(!jointControlClient.waitForServer(ros::Duration(JOINT_CONTROL_CLIENT_SERVER_TIMEOUT))){
+    ROS_ERROR("Robot Control failing to connect to actionlib client for joint control. Aborting");
+    return 0;
+  }
+
+
   ros::Subscriber poseVel_sub = nh.subscribe("/RobotControl/VelocityControl",1, poseVelocity_rawCallback);
   ros::Subscriber poseGoal_sub = nh.subscribe("/RobotControl/PoseControl",1, poseGoal_rawCallback);
+  ros::Subscriber jointGoal_sub = nh.subscribe("/RobotControl/JointControl",1, jointGoal_rawCallback);
   ros::Publisher vel_cmd_pub = nh.advertise<kinova_msgs::PoseVelocity>("/j2s7s300_driver/in/cartesian_velocity",10);
   ros::Publisher status_pub = nh.advertise<std_msgs::String>("/RobotControl/Status",1, true);
 

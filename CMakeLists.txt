@@ -1,12 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(tejas)
+project(drinking_assistant)
 
 add_compile_options(-std=c++11 -O3 -DUSE_AVX_INSTRUCTIONS=ON -fopenmp) # -DCMAKE_BUILD_TYPE=Release
-# add_compile_options(-std=c++11)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
 	std_msgs
 	roscpp
@@ -14,7 +10,11 @@ find_package(catkin REQUIRED COMPONENTS
 	geometry_msgs
 	message_generation
 	tf
+        tf_conversions
         audio_emergency
+        trac_ik_lib
+        orocos_kdl
+        kdl_conversions
 )
 
 
@@ -26,17 +26,21 @@ generate_messages(DEPENDENCIES
   std_msgs
 )
 
-
-
 catkin_package(
 		CATKIN_DEPENDS
-		message_runtime
-		actionlib_msgs
+                    message_runtime
+                    actionlib_msgs
+                    trac_ik_lib
+                DEPENDS
+                    Boost
+                    orocos_kdl
 )
 
 
 include_directories(
 	${catkin_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIRS}
+        ${orocos_kdl_INCLUDE_DIRS}
 )
 
 
@@ -68,6 +72,10 @@ add_executable(feeder_straight_1D src/feeder_straight_1D.cpp)
 add_dependencies(feeder_straight_1D ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(feeder_straight_1D	${catkin_LIBRARIES})
 
+add_executable(feeder_sideways_1D src/feeder_sideways_1D.cpp)
+add_dependencies(feeder_sideways_1D ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
+target_link_libraries(feeder_sideways_1D	${catkin_LIBRARIES})
+
 add_executable(feeder_sideways src/feeder_sideways.cpp)
 add_dependencies(feeder_sideways ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(feeder_sideways	${catkin_LIBRARIES})
@@ -96,3 +104,9 @@ add_executable(data_extractor_gmm src/data_extractor_gmm.cpp)
 add_dependencies(data_extractor_gmm ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 target_link_libraries(data_extractor_gmm ${catkin_LIBRARIES})
 
+add_executable(ik_tests src/ik_tests.cpp)
+target_link_libraries(ik_tests
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+  ${orocos_kdl_LIBRARIES}
+)

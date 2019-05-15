@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <launch>
 
-  <node pkg="tejas" 
+  <node pkg="drinking_assistant"
         type="feeder_offline_training.py" 
         name="offline_training" 
-        args="$(find tejas)/resources/VI_pi_star.csv $(find tejas)/resources/PI_pi_star.csv"
+        args="$(find drinking_assistant)/resources/VI_pi_star.csv $(find drinking_assistant)/resources/PI_pi_star.csv"
         output="screen" />
 
 </launch>

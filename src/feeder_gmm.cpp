@@ -21,7 +21,7 @@
 #include "angles/angles.h"
 #include "std_msgs/Int32.h"
 #include "audio_emergency/AudioMessage.h"
-
+#include <trac_ik/trac_ik.hpp>
 
 #include "geometry_msgs/Vector3.h"
 #include "geometry_msgs/Quaternion.h"
@@ -37,6 +37,9 @@
 #include <string>
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
+
+#include <trac_ik/trac_ik.hpp>
+#include <kdl/chainiksolverpos_nr_jl.hpp>
 
 
 #define FORCE_F_1_2_THRESH 0.05

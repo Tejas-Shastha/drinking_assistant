@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-    <!--include file="$(find tejas)/launch/drink_motion.launch" /-->
+    <!--include file="$(find drinking_assistant)/launch/drink_motion.launch" /-->
 
 
     <arg name="name"/>
@@ -10,11 +10,11 @@
     <arg name="algorithm" default="pi" />
 
     <node pkg="rosbag" type="record" name="rosbag_record" args="-a -o /media/tejas/Elements/post_development_study/rosbags/$(arg user)/policy_$(arg name)" />
-    <node pkg="tejas" type="data_extractor" name="data_extractor" args="$(arg user) policy_$(arg name)" output="screen"/>
+    <node pkg="drinking_assistant" type="data_extractor" name="data_extractor" args="$(arg user) policy_$(arg name)" output="screen"/>
 
-    <node name="feeder_policy_drive" pkg="tejas" type="feeder_policy_drive"
-        args="$(find tejas)/resources/PI_pi_star.csv $(find tejas)/resources/VI_pi_star.csv 
-        $(find tejas)/resources/Q_policy.csv $(find tejas)/resources/SARSA_policy.csv $(arg algorithm)" output="screen"/>
+    <node name="feeder_policy_drive" pkg="drinking_assistant" type="feeder_policy_drive"
+        args="$(find drinking_assistant)/resources/PI_pi_star.csv $(find drinking_assistant)/resources/VI_pi_star.csv
+        $(find drinking_assistant)/resources/Q_policy.csv $(find drinking_assistant)/resources/SARSA_policy.csv $(arg algorithm)" output="screen"/>
 
 
 

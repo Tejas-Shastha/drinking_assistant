@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>tejas</name>
+  <name>drinking_assistant</name>
   <version>0.1.0</version>
 	<description>Package to test robot control modes</description>
 	<maintainer email="tejas.shastha@gmail.com">Tejas Kumar Shastha</maintainer>
@@ -21,6 +21,11 @@
 	<build_depend>std_msgs roscpp</build_depend>
 	<build_export_depend>std_msgs roscpp</build_export_depend>
 	<exec_depend>std_msgs roscpp</exec_depend>
+
+        <build_depend>trac_ik_lib</build_depend>
+        <exec_depend>trac_ik_lib</exec_depend>
+        <depend>orocos_kdl</depend>
+        <depend>tf_conversions</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
