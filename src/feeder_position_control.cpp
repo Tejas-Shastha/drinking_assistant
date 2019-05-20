@@ -1,3 +1,7 @@
+/**
+  * Deprecated node. See README.md for more info. Functions that have descriptions in active nodes are not described here.
+  */
+
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "geometry_msgs/PoseStamped.h"
@@ -142,7 +146,10 @@ void setPoseForDirection(int direction, geometry_msgs::PoseStamped& start_pose)
   }
 }
 
-
+/**
+ * @brief moveCup. Wrapper for position control. Different from the moveCup functions in other nodes.
+ * @param direction
+ */
 
 void moveCup(int direction)
 {
@@ -172,6 +179,7 @@ void moveCup(int direction)
 
     ROS_INFO_STREAM("Start_pose pose is : " << start_pose );
 
+    /** A loop is needed to ensure TF transformation has execution attempts to succeed*/
     while(ros::ok())
     {
       try
@@ -180,6 +188,7 @@ void moveCup(int direction)
         start_pose = current_pose;
         lock_pose.unlock();
 
+        /** Blocking call*/
         setPoseForDirection(direction, start_pose);
 
         tf_listener.transformPose(BASE_FRAME,start_pose,start_pose);
@@ -199,7 +208,7 @@ void moveCup(int direction)
     ROS_INFO_STREAM("goal pose is : " << start_pose );
 
 
-
+    /** Use velocity commands to come approcimately close to target pose*/
     while(ros::ok())
     {
       lock_pose.lock();
@@ -231,6 +240,7 @@ void moveCup(int direction)
     return;
   }
 
+  /** use position controller to precisely reach target pose*/
   while(ros::ok())
   {
     try

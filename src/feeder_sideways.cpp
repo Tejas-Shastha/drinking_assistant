@@ -1,3 +1,7 @@
+/**
+  * Deprecated node. See README.md for more info. Functions that have descriptions in active nodes are not described here.
+  */
+
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "geometry_msgs/PoseStamped.h"
@@ -431,6 +435,7 @@ int main(int argc, char **argv)
   initial_pose=current_pose;
   lock_pose.unlock();
 
+  /** Initialy rotation for user comfort */
 //  moveCup(TRANSLATE_UP, VEL_CMD_DURATION*0.5);
   moveCup(TRANSLATE_RIGHT, VEL_CMD_DURATION*0.2);
   moveCup(ARC_LEFT, VEL_CMD_DURATION);

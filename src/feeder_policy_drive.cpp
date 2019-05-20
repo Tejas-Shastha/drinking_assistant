@@ -1,4 +1,6 @@
 ///
+/// See README.md for more info
+///
 /// if force € [0, FORCE_F_1_2_THRESH] then state 1 : lower cup
 /// if force € (FORCE_F_1_2_THRESH, FORCE_F_2_3_THRESH] then state 2 : do nothing
 /// if force € (FORCE_F_2_3_THRESH, MAX] then state 3 : raise cup
@@ -38,12 +40,13 @@
 #include <boost/algorithm/string.hpp>
 
 
-#define FORCE_F_1_2_THRESH 0.05
-#define FORCE_F_2_3_THRESH 0.5
-#define NUMBER_OF_ARM_SUB_STATES 10
-#define UPPER_FEED_ANGLE_THRESH 180.00 // was 140
+#define FORCE_F_1_2_THRESH 0.05 /** Threshold between force regions 1 and 2*/
+#define FORCE_F_2_3_THRESH 0.5  /** Threshold between force regions 2 and 3*/
+#define NUMBER_OF_ARM_SUB_STATES 10 /** Must be same as the model used to train the RL algorithms */
+#define UPPER_FEED_ANGLE_THRESH 176.00 /** Force safety trigger threshold*/
 #define FORCE_SAFETY 5
 
+/** These are the encoded values for the different movement patterns for the gripper*/
 #define ARC_DOWN 1
 #define ARC_UP 2
 #define TRANSLATE_BACK 3
@@ -56,7 +59,7 @@
 #define BASE_FRAME "j2s7s300_link_base"
 #define SENSOR_FRAME "forcesensor"
 
-
+/** Parameters to define the velocity commands*/
 #define MAX_STEPS 200
 #define VEL_LIN_MAX 0.04
 #define VEL_ANG_MAX 0.4
@@ -87,6 +90,13 @@ ros::Publisher cmd_pos;
 ros::Publisher cmd_vel;
 geometry_msgs::PoseStamped current_pose, initial_pose;
 
+/**
+ * @brief Converts a quaternion message type into euler XYZ- Roll, Pitch, Yaw angles in radians
+ * @param orientation. geometry_msgs::Quaterion
+ * @param roll
+ * @param pitch
+ * @param yaw
+ */
 void getRPYFromQuaternionMSG(geometry_msgs::Quaternion orientation, double& roll,double& pitch, double& yaw)
 {
   tf::Quaternion quat;
@@ -96,6 +106,9 @@ void getRPYFromQuaternionMSG(geometry_msgs::Quaternion orientation, double& roll
   mat.getRPY(roll, pitch,yaw);
 }
 
+/**
+ * @brief Once a position control command is given, we need to wait until action server finished this command or aborts.
+ */
 void waitForActionCompleted()
 {
   std::string temp_res="";
@@ -117,6 +130,12 @@ void waitForActionCompleted()
   }
 }
 
+/**
+ * @brief Used in position controller. Based on the desired movement pattern and current pose, calculate target pose.
+ * @param direction. Encoded movement pattern.
+ * @param start_pose. Starting pose, manipulated into target pose in call be reference model.
+ * @param distance. Custom distance to travel in given pattern.
+ */
 void setPoseForDirection(int direction, geometry_msgs::PoseStamped& start_pose,double  distance)
 {
   geometry_msgs::Quaternion quat;
@@ -160,6 +179,11 @@ void setPoseForDirection(int direction, geometry_msgs::PoseStamped& start_pose,d
   }
 }
 
+/**
+ * @brief Used in velocity control. Given the requested movement pattern, return the necessary corresponding twist values for the velocity command.
+ * @param direction
+ * @return The resultant twist.
+ */
 geometry_msgs::TwistStamped getTwistForDirection(int direction)
 {
   geometry_msgs::TwistStamped twist;
@@ -208,9 +232,23 @@ geometry_msgs::TwistStamped getTwistForDirection(int direction)
   return twist;
 }
 
+/**
+ * @brief Check if max upper angle threshold has been reached.
+ * @return Boolean result.
+ */
 bool checkUpperAngleThreshold();
+
+/**
+ * @brief Check if max lower angle has been reached
+ * @return Boolean result.
+ */
 bool checkLowerAngleThreshold();
 
+/**
+ * @brief Function to actually publish the calculated velocity command
+ * @param twist_msg. Command to publish
+ * @param duration. Duration to publish it for.
+ */
 void publishTwistForDuration(geometry_msgs::TwistStamped twist_msg, double duration)
 {
   ros::Time time_start = ros::Time::now();
@@ -221,6 +259,11 @@ void publishTwistForDuration(geometry_msgs::TwistStamped twist_msg, double durat
   }
 }
 
+/**
+ * @brief Main wrapper for position control.
+ * @param direction. Movement pattern requested.
+ * @param distance. Custom distance to move in this pattern.
+ */
 void positionControlDriveForDirection(int direction, double distance)
 {
   geometry_msgs::PoseStamped start_pose, pose_in_base;
@@ -237,6 +280,7 @@ void positionControlDriveForDirection(int direction, double distance)
       start_pose = current_pose;
       lock_pose.unlock();
 
+      /** Calculate the actual pose to send to the position control action server*/
       setPoseForDirection(direction, start_pose, distance);
 
       tf_listener.transformPose(BASE_FRAME,start_pose,pose_in_base);
@@ -256,6 +300,10 @@ void positionControlDriveForDirection(int direction, double distance)
   cmd_pos.publish(pose_in_base);
 }
 
+/**
+ * @brief Check if force sensors report max force safety threshold has been reached
+ * @return Boolean result.
+ */
 bool isForceSafe()
 {
   double local_force_f;
@@ -272,6 +320,11 @@ bool isForceSafe()
     return true;
 }
 
+
+/**
+ * @brief Check if the audio sensor node detects an emergency input from the user.
+ * @return Boolean result.
+ */
 bool isAudioSafe()
 {
   lock_emerg.lock();
@@ -282,8 +335,17 @@ bool isAudioSafe()
   return !emerg;
 }
 
+/**
+ * @brief Wrapper for the fallback sequence.
+ * @param emerg. Is it an emergency fallback or a timed fallback. Movement differs based on this.
+ */
 void fallback(bool emerg=false);
 
+
+/**
+ * @brief Wrapper for the actual targeted velocity controller. Manipulated Roll angle only.
+ * @param direction. Movement pattern requested.
+ */
 void driveToRollGoalWithVelocity(int direction)
 {
   if(direction == RAISE_CUP)
@@ -309,13 +371,16 @@ void driveToRollGoalWithVelocity(int direction)
 
   goal_pose = start_pose;
 
+  /** Calculate first the quaternion for how much roll angle to change */
   tf::Quaternion q_rot = tf::createQuaternionFromRPY(angles::from_degrees( direction==RAISE_CUP?rotation_step:-rotation_step),angles::from_degrees(0),angles::from_degrees(0)); // Rotate about x by 20 degrees
   tf::Quaternion q_start; tf::quaternionMsgToTF(start_pose.pose.orientation, q_start);
+  /** Multiply starting quat with the rotation quat to get the resultant goal quat*/
   tf::Quaternion q_goal = q_start*q_rot;
 
+  /** Convert the resultant quat to msg type*/
   tf::quaternionTFToMsg(q_goal,goal_pose.pose.orientation);
 
-
+  /** The proportional controller*/
   ros::Rate loop_rate(100);
   //ros::Time start = ros::Time::now();
   while(ros::ok())
@@ -328,6 +393,7 @@ void driveToRollGoalWithVelocity(int direction)
     getRPYFromQuaternionMSG(temp_pose.pose.orientation, temp_rol, temp_pit, temp_yaw);
     getRPYFromQuaternionMSG(start_pose.pose.orientation, start_rol, start_pit, start_yaw);
 
+    /** Rescale from -180 to 180 into 0 to 360*/
     if (goal_rol < 0 ) goal_rol = goal_rol + angles::from_degrees(360);
     if (temp_rol < 0 ) temp_rol = temp_rol + angles::from_degrees(360);
 
@@ -368,6 +434,12 @@ void driveToRollGoalWithVelocity(int direction)
 
 }
 
+/**
+ * @brief moveCup. Hybrid wrapper to chose between position or velocity controller based on requested pattern.
+ * @param direction. Requested movement pattern.
+ * @param duration
+ * @param distance
+ */
 void moveCup(int direction, double duration=VEL_CMD_DURATION, double distance=0.1)
 {
   if (direction==TRANSLATE_BACK || direction==TRANSLATE_FRONT)
@@ -384,6 +456,10 @@ void moveCup(int direction, double duration=VEL_CMD_DURATION, double distance=0.
   return;
 }
 
+/**
+ * @brief poseGrabber. Callback for reading pose values. Store pose in a mutexed global variable.
+ * @param pose
+ */
 void poseGrabber(geometry_msgs::PoseStamped pose)
 {
   lock_pose.lock();
@@ -391,6 +467,10 @@ void poseGrabber(geometry_msgs::PoseStamped pose)
   lock_pose.unlock();
 }
 
+/**
+ * @brief forceGrabber. Callback to read force values from rosserial
+ * @param msg
+ */
 void forceGrabber(const hri_package::Sens_Force::ConstPtr msg)
 {
   lock_force.lock();
@@ -399,6 +479,10 @@ void forceGrabber(const hri_package::Sens_Force::ConstPtr msg)
   lock_force.unlock();
 }
 
+/**
+ * @brief statusGrabber. Read robot status from RobotControl node.
+ * @param status
+ */
 void statusGrabber(std_msgs::String::ConstPtr status)
 {
   lock_status.lock();
@@ -406,6 +490,9 @@ void statusGrabber(std_msgs::String::ConstPtr status)
   lock_status.unlock();
 }
 
+/**
+ * @brief waitForPoseDataAvailable. When initialising robot, wait until all topics publish good data before starting the controllers.
+ */
 void waitForPoseDataAvailable()
 {
   // This loop to wait until subscriber starts returning valid poses.
@@ -470,6 +557,10 @@ bool checkLowerAngleThreshold()
   }
 }
 
+/**
+ * @brief getCurrentRoll. Get the current roll angle only.
+ * @return Roll in degrees, rescaled from -180:180 to 0:360
+ */
 double getCurrentRoll()
 {
   lock_pose.lock();
@@ -483,6 +574,10 @@ double getCurrentRoll()
   return temp_rol<0?temp_rol+angles::from_degrees(360):temp_rol;
 }
 
+/**
+ * @brief callFallbackTimer. Start the timer when robot reaches starting pose.
+ * @param duration. Duration of timer.
+ */
 void callFallbackTimer(double duration)
 {
 
@@ -527,7 +622,12 @@ void fallback(bool emerg)
   // ROS_INFO_STREAM("Current yaw float: " << angles::to_degrees(yaw) << " int " << yaw_degrees);
 
   geometry_msgs::TwistStamped twist_cmd;
- 
+
+  /** Fallback is position controller based, so it is in world coordinates.
+      Calculate the approximate trajectory in world coordinates based in current pose.
+      These calculations were made separately by hand.
+      Because fallback has to always happen AWAY from the users face
+    */
   // y = mx + c
   double m = 0.004444444;
   double velx_c = 0.8;
@@ -570,7 +670,9 @@ void fallback(bool emerg)
   publishTwistForDuration(twist_cmd,1);
 }
 
-
+/**
+ * @brief The CSVReader class. Wraps a method to read data from a CSV file on disk.
+ */
 class CSVReader
 {
     std::string fileName;
@@ -585,6 +687,10 @@ public:
     std::vector<std::vector<std::string> > getData();
 };
 
+/**
+ * @brief CSVReader::getData. Get generic data from a CSV file on disk.
+ * @return
+ */
 std::vector<std::vector<std::string> > CSVReader::getData()
 {
     std::ifstream file(fileName);
@@ -605,6 +711,11 @@ std::vector<std::vector<std::string> > CSVReader::getData()
     return dataList;
 }
 
+/**
+ * @brief getPolicyFromCsv. get specifically the policy data from a CSV file on disk.
+ * @param file
+ * @return
+ */
 std::vector<int> getPolicyFromCsv(std::string file)
 {
     std::vector<int> policy;
@@ -628,7 +739,12 @@ std::vector<int> getPolicyFromCsv(std::string file)
     return policy;
 }
 
-
+/**
+ * @brief calculateCurrentState. Calculate the current state based on force and step count
+ * @param force. Obained from force sensor.
+ * @param step. Internally tracked.
+ * @return The state.
+ */
 int calculateCurrentState(double force, int step)
 {
   int force_state;
@@ -642,7 +758,12 @@ int calculateCurrentState(double force, int step)
   return current_state;
 }
 
-
+/**
+ * @brief selectActivePolicy. Select the policy to use based on the chosen algorithm.
+ * @param algorithm. Contains the name of selected algorithm.
+ * @param argv. Contains the path to all policy files.
+ * @return
+ */
 std::vector<int> selectActivePolicy(std::string algorithm, char** argv)
 {
   if(algorithm == "pi")
@@ -672,6 +793,10 @@ std::vector<int> selectActivePolicy(std::string algorithm, char** argv)
   }
 }
 
+/**
+ * @brief audioGrabber. Get the result of the audio_emergency node.
+ * @param msg
+ */
 void audioGrabber(audio_emergency::AudioMessage::ConstPtr msg)
 {
   lock_emerg.lock();
@@ -679,6 +804,10 @@ void audioGrabber(audio_emergency::AudioMessage::ConstPtr msg)
   lock_emerg.unlock();
 }
 
+/**
+ * @brief safePauseFor. Function used to puase for a duration, while still maintianing all the safety checks.
+ * @param duration
+ */
 void safePauseFor(float duration)
 {
   ros::Time start = ros::Time::now();
@@ -712,11 +841,13 @@ int main(int argc, char **argv)
   ros::Publisher arm_pose_pub = nh.advertise<std_msgs::Int32>("/arm_state", 1000);
   ros::Subscriber audio_emerg = nh.subscribe("/audio_emergency",1000, audioGrabber );
 
+  /** Important to wait here until all topics have valid data*/
   waitForPoseDataAvailable();
 
   double local_force_f;
   bool print_once_only=true;
 
+  /** Initial rotation to ensure the user can comfortably press the force sensor*/
   ROS_INFO_STREAM("Initial rotation from " << angles::to_degrees(getCurrentRoll()));
   moveCup(RAISE_CUP, VEL_CMD_DURATION);
   ros::Duration(1.0).sleep(); // Allow inertial settlement
@@ -726,12 +857,13 @@ int main(int argc, char **argv)
   initial_pose=current_pose;
   lock_pose.unlock();
 
+  /** Set lower angle threshold based on starting angle*/
   double r,p,y;
   getRPYFromQuaternionMSG(initial_pose.pose.orientation,r,p,y);
   lower_angle_thresh = r;
 
+  /**  Dynamically calculate the rotation angle per step based on the angle limits and number of arm states per the markov model*/
   rotation_step = (UPPER_FEED_ANGLE_THRESH - angles::to_degrees(lower_angle_thresh))/NUMBER_OF_ARM_SUB_STATES;
-
 
   std::vector<int> active_policy = selectActivePolicy(argv[5], argv);
 
@@ -742,10 +874,12 @@ int main(int argc, char **argv)
   for (int action:active_policy) std::cout << action << " ";
   std::cout << std::endl;
 
+  /** Internally track the step count as robot arm sub state*/
   step_count = 0;
   int prev_step_count = 0;
   ros::Rate loop_rate(10);
 
+  /**  Main control loop*/
   while(ros::ok())
   {
     ros::spinOnce();

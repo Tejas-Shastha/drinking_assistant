@@ -1,3 +1,7 @@
+/**
+  * Deprecated node. See README.md for more info. Functions that have descriptions in active nodes are not described here.
+  */
+
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "geometry_msgs/PoseStamped.h"

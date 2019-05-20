@@ -1,3 +1,7 @@
+/**
+Check README.md for more info
+  */
+
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "geometry_msgs/PoseStamped.h"
@@ -23,13 +27,13 @@ float sequence_nr=0.00;
 
 
 
-/***
- * Start the node, First argument to the node is the name of the output file
- * Play the rosbag you want to extract
- * Path of output is hardcoded
- ***/
-
-
+/**
+ * @brief Converts a quaternion message type into euler XYZ- Roll, Pitch, Yaw angles in radians
+ * @param orientation. geometry_msgs::Quaterion
+ * @param roll
+ * @param pitch
+ * @param yaw
+ */
 void getRPYFromQuaternionMSG(geometry_msgs::Quaternion orientation, double& roll,double& pitch, double& yaw)
 {
   tf::Quaternion quat;
@@ -39,6 +43,10 @@ void getRPYFromQuaternionMSG(geometry_msgs::Quaternion orientation, double& roll
   mat.getRPY(roll, pitch,yaw);
 }
 
+/**
+ * @brief Callback to read pose values from Kinova drivers. Writes the pose in X,Y,Z(meters) and Quaternions to files.
+ * @param pose
+ */
 void poseGrabber(geometry_msgs::PoseStamped pose)
 {
 
@@ -83,6 +91,12 @@ void poseGrabber(geometry_msgs::PoseStamped pose)
   tool_writer.close();
 }
 
+/**
+ * @brief Main function needs 1 argument.
+ * @param argc = 2
+ * @param argv. Arg1 = filename
+ * @return
+ */
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "data_extractor");

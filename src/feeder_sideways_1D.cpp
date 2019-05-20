@@ -1,4 +1,6 @@
 ///
+/// See README.md for more info.
+///
 /// if force € [0, FORCE_F_1_2_THRESH] then state 1 : lower cup
 /// if force € (FORCE_F_1_2_THRESH, FORCE_F_2_3_THRESH] then state 2 : do nothing
 /// if force € (FORCE_F_2_3_THRESH, MAX] then state 3 : raise cup
@@ -31,13 +33,11 @@
 #include <kinova_msgs/PoseVelocity.h>
 
 
-#define FORCE_F_1_2_THRESH 0.3
-#define FORCE_F_2_3_THRESH 0.5
-#define FORCE_SAFETY 5
-#define UPPER_FEED_ANGLE_THRESH 90
-#define ROTATION_STEP 5
-
-
+#define FORCE_F_1_2_THRESH 0.3 /** Threshold between force regions 1 and 2*/
+#define FORCE_F_2_3_THRESH 0.5 /** Threshold between force regions 2 and 3*/
+#define FORCE_SAFETY 5 /** Force safety trigger threshold*/
+#define UPPER_FEED_ANGLE_THRESH 90 /** Upper Pitch angle limit*/
+#define ROTATION_STEP 5 /** Rotation per step*/
 
 #define ARC_DOWN 1
 #define ARC_UP 2
@@ -75,6 +75,13 @@ ros::Publisher cmd_pos;
 ros::Publisher cmd_vel;
 geometry_msgs::PoseStamped current_pose, initial_pose;
 
+/**
+ * @brief Converts a quaternion message type into euler XYZ- Roll, Pitch, Yaw angles in radians
+ * @param orientation. geometry_msgs::Quaterion
+ * @param roll
+ * @param pitch
+ * @param yaw
+ */
 void getRPYFromQuaternionMSG(geometry_msgs::Quaternion orientation, double& roll,double& pitch, double& yaw)
 {
   tf::Quaternion quat;
@@ -84,6 +91,10 @@ void getRPYFromQuaternionMSG(geometry_msgs::Quaternion orientation, double& roll
   mat.getRPY(roll, pitch,yaw);
 }
 
+/**
+ * @brief getCurrentRoll. Get current Roll angle in radians.
+ * @return
+ */
 double getCurrentRoll()
 {
   lock_pose.lock();
@@ -96,6 +107,10 @@ double getCurrentRoll()
   return temp_rol;
 }
 
+/**
+ * @brief getCurrentPitch. Get current pitch angle in radians.
+ * @return
+ */
 double getCurrentPitch()
 {
   lock_pose.lock();
@@ -108,19 +123,29 @@ double getCurrentPitch()
   return temp_pitch;
 }
 
+/**
+ * @brief getCurrentRollDegrees. Get current roll angle in degrees.
+ * @return
+ */
 double getCurrentRollDegrees(){
   double temp_roll = getCurrentRoll();
   if (temp_roll >= 0)  return angles::to_degrees(getCurrentRoll());
   return angles::to_degrees(getCurrentRoll()) + 360;
 }
 
+/**
+ * @brief getCurrentPitchDegrees. Get current pitch angle in degrees.
+ * @return
+ */
 double getCurrentPitchDegrees(){
   double temp_pitch = getCurrentPitch();
   if (temp_pitch>= 0)  return angles::to_degrees(getCurrentPitch());
   return angles::to_degrees(getCurrentPitch()) + 360;
 }
 
-
+/**
+ * @brief Once a position control command is given, we need to wait until action server finished this command or aborts.
+ */
 void waitForActionCompleted()
 {
   std::string temp_res="";
@@ -142,6 +167,12 @@ void waitForActionCompleted()
   }
 }
 
+/**
+ * @brief Used in position controller. Based on the desired movement pattern and current pose, calculate target pose.
+ * @param direction. Encoded movement pattern.
+ * @param start_pose. Starting pose, manipulated into target pose in call be reference model.
+ * @param distance. Custom distance to travel in given pattern.
+ */
 void setPoseForDirection(int direction, geometry_msgs::PoseStamped& start_pose,double  distance)
 {
   geometry_msgs::Quaternion quat;
@@ -185,6 +216,11 @@ void setPoseForDirection(int direction, geometry_msgs::PoseStamped& start_pose,d
   }
 }
 
+/**
+ * @brief Used in velocity control. Given the requested movement pattern, return the necessary corresponding twist values for the velocity command.
+ * @param direction
+ * @return The resultant twist.
+ */
 geometry_msgs::TwistStamped getTwistForDirection(int direction)
 {
   geometry_msgs::TwistStamped twist;
@@ -233,10 +269,26 @@ geometry_msgs::TwistStamped getTwistForDirection(int direction)
   return twist;
 }
 
+/**
+ * @brief Check if max upper angle threshold has been reached.
+ * @return Boolean result.
+ */
 bool checkUpperAngleThreshold();
+/**
+ * @brief Check if max lower angle has been reached
+ * @return Boolean result.
+ */
 bool checkLowerAngleThreshold();
+/**
+ * @brief fallback. Actual fallback function implementation.
+ * @param emerg
+ */
 void fallback(bool emerg=false);
 
+/**
+ * @brief Check if force sensors report max force safety threshold has been reached
+ * @return Boolean result.
+ */
 bool isForceSafe()
 {
   double local_force_f;
@@ -253,6 +305,10 @@ bool isForceSafe()
     return true;
 }
 
+/**
+ * @brief Check if the audio sensor node detects an emergency input from the user.
+ * @return Boolean result.
+ */
 bool isAudioSafe()
 {
   lock_emerg.lock();
@@ -263,6 +319,11 @@ bool isAudioSafe()
   return !emerg;
 }
 
+/**
+ * @brief Function to actually publish the calculated velocity command
+ * @param twist_msg. Command to publish
+ * @param duration. Duration to publish it for.
+ */
 void publishTwistForDuration(geometry_msgs::TwistStamped twist_msg, double duration)
 {
   ros::Time time_start = ros::Time::now();
@@ -273,6 +334,11 @@ void publishTwistForDuration(geometry_msgs::TwistStamped twist_msg, double durat
   }
 }
 
+/**
+ * @brief Main wrapper for position control.
+ * @param direction. Movement pattern requested.
+ * @param distance. Custom distance to move in this pattern.
+ */
 void positionControlDriveForDirection(int direction, double distance)
 {
   geometry_msgs::PoseStamped start_pose, pose_in_base;
@@ -308,6 +374,10 @@ void positionControlDriveForDirection(int direction, double distance)
   cmd_pos.publish(pose_in_base);
 }
 
+/**
+ * @brief Wrapper for the actual targeted velocity controller. Manipulated Pitch angle only.
+ * @param direction. Movement pattern requested.
+ */
 void driveToPitchGoalWithVelocity(int direction)
 {
   if(direction == RAISE_CUP)
@@ -333,14 +403,17 @@ void driveToPitchGoalWithVelocity(int direction)
 
   goal_pose = start_pose;
 
+  /** Calculate first the quaternion for how much pitch angle to change */
   tf::Quaternion q_rot = tf::createQuaternionFromRPY(angles::from_degrees(0),angles::from_degrees(0),angles::from_degrees( direction==RAISE_CUP?-ROTATION_STEP:ROTATION_STEP)); // Change Pitch angle
   tf::Quaternion q_start; tf::quaternionMsgToTF(start_pose.pose.orientation, q_start);
+  /** Multiply starting quat with the rotation quat to get the resultant goal quat*/
   tf::Quaternion q_goal = q_start*q_rot;
 
+  /** Convert the resultant quat to msg type*/
   tf::quaternionTFToMsg(q_goal,goal_pose.pose.orientation);
 
   ros::Rate loop_rate(100);
-  //ros::Time start = ros::Time::now();
+  /** The proportional controller*/
   while(ros::ok())
   {
     lock_pose.lock();
@@ -390,13 +463,21 @@ void driveToPitchGoalWithVelocity(int direction)
 
 }
 
+/**
+ * @brief moveCup. Hybrid wrapper to chose between position or velocity controller based on requested pattern.
+ * @param direction. Requested movement pattern.
+ * @param duration
+ * @param distance
+ */
 void moveCup(int direction, double duration=VEL_CMD_DURATION, double distance=0.1)
 {
+    /** Position controller for translations used in fallback*/
   if (direction==TRANSLATE_BACK || direction==TRANSLATE_FRONT)
   {
     positionControlDriveForDirection(direction, distance);
     return;
   }
+  /** Veclocity controller for all other movement patterns*/
   else
   {
     geometry_msgs::TwistStamped twist_msg = getTwistForDirection(direction);
@@ -406,7 +487,10 @@ void moveCup(int direction, double duration=VEL_CMD_DURATION, double distance=0.
   return;
 }
 
-
+/**
+ * @brief poseGrabber. Callback for reading pose values. Store pose in a mutexed global variable.
+ * @param pose
+ */
 void poseGrabber(geometry_msgs::PoseStamped pose)
 {
   lock_pose.lock();
@@ -414,6 +498,10 @@ void poseGrabber(geometry_msgs::PoseStamped pose)
   lock_pose.unlock();
 }
 
+/**
+ * @brief forceGrabber. Callback to read force values from rosserial
+ * @param msg
+ */
 void forceGrabber(const hri_package::Sens_Force::ConstPtr msg)
 {
   lock_force.lock();
@@ -422,6 +510,10 @@ void forceGrabber(const hri_package::Sens_Force::ConstPtr msg)
   lock_force.unlock();
 }
 
+/**
+ * @brief statusGrabber. Read robot status from RobotControl node.
+ * @param status
+ */
 void statusGrabber(std_msgs::String::ConstPtr status)
 {
   lock_status.lock();
@@ -429,6 +521,9 @@ void statusGrabber(std_msgs::String::ConstPtr status)
   lock_status.unlock();
 }
 
+/**
+ * @brief waitForPoseDataAvailable. When initialising robot, wait until all topics publish good data before starting the controllers.
+ */
 void waitForPoseDataAvailable()
 {
   // This loop to wait until subscriber starts returning valid poses.
@@ -500,8 +595,10 @@ bool checkLowerAngleThreshold()
   }
 }
 
-
-
+/**
+ * @brief callFallbackTimer. Start the timer when robot reaches starting pose.
+ * @param duration. Duration of timer.
+ */
 void callFallbackTimer(double duration)
 {
 
@@ -540,7 +637,10 @@ void fallback(bool emerg)
   publishTwistForDuration(twist_cmd,1);
 }
 
-
+/**
+ * @brief audioGrabber. Get the result of the audio_emergency node.
+ * @param msg
+ */
 void audioGrabber(audio_emergency::AudioMessage::ConstPtr msg)
 {
   lock_emerg.lock();
@@ -569,6 +669,7 @@ int main(int argc, char **argv)
   double local_force_f;
   bool print_once_only=true;
 
+  /** Initial rotation for user comfort*/
   ROS_INFO_STREAM("Initial rotation from " << angles::to_degrees(getCurrentPitch()));
   moveCup(RAISE_CUP, VEL_CMD_DURATION);
   ros::Duration(1.0).sleep(); // Allow inertial settlement
@@ -578,11 +679,13 @@ int main(int argc, char **argv)
   initial_pose=current_pose;
   lock_pose.unlock();
 
+  /** Set lower angle threshold based on starting angle*/
   double r,p,y;
   getRPYFromQuaternionMSG(initial_pose.pose.orientation,r,p,y);
   lower_angle_thresh = p;
   ROS_INFO_STREAM("Lower feed angle thresh set to " << angles::to_degrees(lower_angle_thresh));
 
+  /** Internally track step count for display purposes only*/
   step_count = 0;
   int prev_step_count = 0;
 

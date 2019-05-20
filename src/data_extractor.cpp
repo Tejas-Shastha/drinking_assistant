@@ -1,3 +1,8 @@
+/**
+Check README.md for more info
+  */
+
+
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "geometry_msgs/PoseStamped.h"
@@ -23,7 +28,13 @@ int USER_ID;
 std::string FILE_NAME;
 ros::Time start_time;
 
-
+/**
+ * @brief Converts a quaternion message type into euler XYZ- Roll, Pitch, Yaw angles in radians
+ * @param orientation. geometry_msgs::Quaterion
+ * @param roll
+ * @param pitch
+ * @param yaw
+ */
 void getRPYFromQuaternionMSG(geometry_msgs::Quaternion orientation, double& roll,double& pitch, double& yaw)
 {
   tf::Quaternion quat;
@@ -33,6 +44,11 @@ void getRPYFromQuaternionMSG(geometry_msgs::Quaternion orientation, double& roll
   mat.getRPY(roll, pitch,yaw);
 }
 
+
+/**
+ * @brief Callback to read force values from rosserial
+ * @param msg
+ */
 void forceGrabber(const hri_package::Sens_Force::ConstPtr msg)
 {
   lock_force.lock();
@@ -54,6 +70,10 @@ void forceGrabber(const hri_package::Sens_Force::ConstPtr msg)
 //  force_writer.close();
 }
 
+/**
+ * @brief Callback to read pose values from Kinova drivers. Writes the pose in X,Y,Z(meters) and Roll,Pitch,Yaw(degrees) to file.
+ * @param pose
+ */
 void poseGrabber(geometry_msgs::PoseStamped pose)
 {
 
@@ -63,6 +83,11 @@ void poseGrabber(geometry_msgs::PoseStamped pose)
   std::string tool_filename="/home/tejas/data/extracted_data/" + std::to_string(USER_ID) + "/" + FILE_NAME + "_synchronised.ods";
 
 //  ROS_INFO_STREAM("Writing sync data to : /home/tejas/data/extracted_data/" << USER_ID << "/" << FILE_NAME << "_synchronised.ods" );
+
+  /**
+    Use Mutexes to safely read force values from callback thread into local variables
+    */
+
 
   lock_force.lock();
   double forceF=force_f_received;
@@ -87,6 +112,12 @@ void poseGrabber(geometry_msgs::PoseStamped pose)
   tool_writer.close();
 }
 
+/**
+ * @brief Main function requires two command line arguments.
+ * @param argc = 3 (including 1 default)
+ * @param argv. Arg1 = user_id, Arg2 = file_name
+ * @return
+ */
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "data_extractor");

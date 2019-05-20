@@ -15,7 +15,7 @@ This package contains all the nodes required to run the drinking assistant using
 
 ### Launch Parameters (wherever applicable)
 1. `port` - Enable and use this in the `sensors.launch` to specify the full port name like /dev/tty_USB1 if usb port naming is not done.   
-2. `usb_port` - Currently used. Requires the USB device to be configured with the correct name.  
+2. `usb_port` - Currently used in `sensors.launch` instead of `port`. Requires the USB device to be configured with the correct name.
 3. `user` - User number. Used for categorizing. Required.   
 4. `name` - Name of the user/experiment. Used for subcategorizing. Required.  
 5. `algorithm` - Select the algorithm whose optimum policy is to be loaded. Valied choices are - `pi, vi, q, sarsa`. These are case sensitive.
@@ -46,26 +46,26 @@ This node starts the force controller using the GMR trajectory. You can pass a c
  
 This is the Policy Drive Controller. Suggested to use the launch file instead.   
 
-* `feeder_position_control.cpp`   
+* `feeder_position_control.cpp`
 *NOT IN USE*    
 
 This is the Force Controller Mk I using Position Controller instead of Velocity Controller. Technically works, but since PC is so bad, this was not further developed and is no longer used. Still left here for reference or future use. 
 
-* `feeder_sideways.cpp`    
+* `feeder_sideways.cpp`
 *NOT IN USE*
 
-This is the Force Controller Mk I with sideways feeding approach. Truncated since the smart cup was changed to single sensor.
+This is the Force Controller Mk I with sideways feeding approach. Deprecated since the smart cup was changed to single sensor.
 
 * `feeder_sideways_1D.cpp`   
 
 This is the Force Controller Mk II with sidewys feeding approach. Start with launch file if recording, or simply run this node if only testing.
 
-* `feeder_straight.cpp`    
+* `feeder_straight.cpp`
 *NOT IN USE*
 
-This is the Force Controller Mk I with forward feeding approach. Truncated since the smart cup was changed to single sensor.
+This is the Force Controller Mk I with forward feeding approach. Deprecated since the smart cup was changed to single sensor.
 
-* `feeder_straight_1D.cpp`   
+* `feeder_straight_1D.cpp`
 
 This is the Force Controller Mk II with forward feeding approach. Start with launch file if recording, or simply run this node if only testing.
 
