@@ -1,0 +1,24 @@
+actions: []
+authors: tejas
+brief: ''
+bugtracker: ''
+depends:
+- catkin
+- trac_ik_lib
+- actionlib
+- message_runtime
+- std_msgs roscpp
+- tf
+- message_generation
+- orocos_kdl
+- actionlib_msgs
+- tf_conversions
+description: Package to test robot control modes
+license: Apache 2.0
+maintainers: Tejas Kumar Shastha <tejas.shastha@gmail.com>
+msgs: []
+package_type: package
+repo_url: ''
+srvs:
+- EnvStep
+url: ''

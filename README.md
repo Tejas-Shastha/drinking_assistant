@@ -1,6 +1,8 @@
 # THE DRINKING ASSISTANT PROJECT
 This package contains all the nodes required to run the drinking assistant using the Kinova JACO arm. 
 
+Refer`./doc/html/index.html` for source documentation.  
+
 ## BRINGUP
 * `robot_bringup.launch` : This launch file can be used to start the Kinova ROS driver and the Robot Control interface.   
 * `sensors.launch` : This starts the force sensors i.e. rosserial.
