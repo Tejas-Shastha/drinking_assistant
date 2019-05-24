@@ -541,6 +541,10 @@ bool checkLowerAngleThreshold()
   }
 }
 
+/**
+ * @brief getCurrentRoll. Get the current roll angle of gripper in radians.
+ * @return
+ */
 double getCurrentRoll()
 {
   lock_pose.lock();
@@ -553,6 +557,10 @@ double getCurrentRoll()
   return temp_rol;
 }
 
+/**
+ * @brief getCurrentRollDegrees. Get the current roll angle in degrees.
+ * @return
+ */
 double getCurrentRollDegrees(){
   double temp_roll = getCurrentRoll();
   if (temp_roll >= 0)  return angles::to_degrees(getCurrentRoll());
@@ -593,7 +601,12 @@ void callFallbackTimer(double duration)
   exit(1);
 }
 
-
+/**
+ * @brief fallback. Main fallback function.
+ *
+ * Actual trajectory depends on current orientation of the gripper.
+ * @param emerg
+ */
 void fallback(bool emerg)
 {
   lock_pose.lock();
@@ -651,7 +664,10 @@ void fallback(bool emerg)
   publishTwistForDuration(twist_cmd,1);
 }
 
-
+/**
+ * @brief audioGrabber. Get the result of the audio_emergency node.
+ * @param msg
+ */
 void audioGrabber(audio_emergency::AudioMessage::ConstPtr msg)
 {
   lock_emerg.lock();

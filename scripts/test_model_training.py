@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# See README.md for more info.
+
 import random
 import env
 import robot_stepper_client

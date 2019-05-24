@@ -629,11 +629,20 @@ void callFallbackTimer(double duration)
   exit(1);
 }
 
-
+/**
+ * @brief fallback. The actual fallback function.
+ *
+ * Does not require a complicated trajectory calculation since the typical orientation for sideways feeding is fixed and fallback is always in the same direction.
+ * @param emerg. Also lower cup if emrgency to avoid spillage.
+ */
 void fallback(bool emerg)
 {
   geometry_msgs::TwistStamped twist_cmd;
   twist_cmd.twist.linear.x = -1;
+  if (emerg)
+  {
+    twist_cmd.twist.angular.z = -1;
+  }
   publishTwistForDuration(twist_cmd,1);
 }
 

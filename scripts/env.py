@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 """ 
+
+See README.md for more info
+
 1. Import this script
 2. Invoke env.buildP()
 3. Then use P as required
@@ -50,6 +53,8 @@ TERMINAL_STATES=[nS-1, nS-2, nS-3]
 
 P = {s : {a : [] for a in range(nA)} for s in range(nS)}
 
+# Need to build the model when invoking this script in others before using it.
+# @param terminal_state. If the model is terminating or non terminating type.
 def buildP(terminal_state=False):
     global P
     for s in range(nS):
@@ -115,11 +120,12 @@ def buildP(terminal_state=False):
             P[s][a].append(  (1.0/3.0, s_+1, r2, True if (s_+1   in TERMINAL_STATES or s in TERMINAL_STATES) and terminal_state else False)  )
             P[s][a].append(  (1.0/3.0, s_+2, r3, True if (s_+2   in TERMINAL_STATES or s in TERMINAL_STATES) and terminal_state else False)  )
 
-
+# Since model is built explicitly, successive buildP() calls keep stacking the arrays in size. scrubP() before each buildP() ensures the model size remains constant.
 def scrubP():
     global P
     P = {s : {a : [] for a in range(nA)} for s in range(nS)}
 
+# Nice readable format
 def printP():
     for s in range(nS):
         for a in P[s]:
@@ -134,6 +140,7 @@ def printP():
             print()
         print("----------------------")
 
+# Save model to text file
 def printPtoTxtFile(path):
     for s in range(nS):
         for a in P[s]:

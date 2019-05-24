@@ -1,4 +1,8 @@
-/// DRIVE TO POSE
+/**
+  * See README.md for more info.
+  *
+  * The velocity control functions are developed and tested here, then copied into the main controllers.
+  */
 
 
 #include "ros/ros.h"

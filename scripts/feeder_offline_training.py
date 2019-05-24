@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """ 
-https://www.kaggle.com/angps95/intro-to-reinforcement-learning-with-openai-gym 
+SOURCE: https://www.kaggle.com/angps95/intro-to-reinforcement-learning-with-openai-gym
 
 REQUIRES:
 env.py in the same directory

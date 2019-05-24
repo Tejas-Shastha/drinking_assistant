@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-# Training done here using vector as input. Works.
+# See README.md for more info.
+# Training done here using vector as input.
+# Overall structure of this code adopted from an online blog, source is unfortunately lost.
 
 import sys
 import random
@@ -16,16 +18,19 @@ from keras.models import model_from_json
 import time
 import numpy as np
 
-GAMMA = 0.1
+GAMMA = 0.1 # Discount factor
 LEARNING_RATE = 0.001
 
+# Memory replay
 MEMORY_SIZE = 1000000
 BATCH_SIZE = 20
 
+# Exploration vs exploitation
 EXPLORATION_MAX = 1.0
 EXPLORATION_MIN = 0.01
 EXPLORATION_DECAY = 0.1
 
+# Incremental change tracker for convergence check
 DELTA = 0
 
 class DQNSolver:
@@ -48,6 +53,7 @@ class DQNSolver:
         self.model.compile(loss="mse", optimizer=Adam(lr=LEARNING_RATE))
         self.train_mode = True
 
+#Save to memory
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
     
@@ -60,6 +66,7 @@ class DQNSolver:
         q_values = self.model.predict(state)
         return np.argmax(q_values[0])
 
+# Performs the actual Q value updates by reading memory.
     def experience_replay(self, episode):
         if len(self.memory) < BATCH_SIZE:
             return
@@ -99,7 +106,8 @@ class DQNSolver:
         self.model.compile(loss="mse", optimizer=Adam(lr=LEARNING_RATE))
         self.train_mode = False
         return loaded_model
-    
+
+# Once model is trained, use this to extract Q table.
     def getQTable(self, verbose=False):
         policy = []
         q_table=[]
@@ -126,7 +134,9 @@ class DQNSolver:
         csv_interface.writePolicyArrayToCsv(policy_file, policy)
         print("Saving DQN performance to: {}".format(performance_file))
 
+# Main function
 def feeder():
+    # Load params from launch file, or defaults
     if len(sys.argv) == 10:
         dqn_policy_file = sys.argv[1]
         dqn_json_file = sys.argv[2]
@@ -152,17 +162,20 @@ def feeder():
     print("Running for {} episodes until loss of {}".format(total_episodes, loss_threshold))
     time.sleep(1)
 
+    # Define model
     observation_space = env.nS
     action_space = env.nA
     state_list = range(0, observation_space)
     action_list = range(0, action_space)
 
+    # Setup NN
     dqn_solver = DQNSolver(observation_space, action_space)
     dqn_solver.build_fresh()
     states_visited = np.zeros(dqn_solver.observation_space)
     episode = 0
     
     csv_interface.writeQTableToCsv(dqn_performance_file, np.array([("episode","reward","avg_loss","epsilon")]) )
+    # Start training
     for episode in range(total_episodes):
         # episode += 1
         state = random.choice(state_list)
@@ -171,7 +184,11 @@ def feeder():
         total_reward = 0
         avg_loss = 0.0
         for run in range(STEPS_PER_EPISODE):
-            # run += 1            
+
+            # Input shaping is done here. Instead of having a single input neuron with 30 values (for 30 states), a vector of size 30 is used (ie 30 neurons).
+            # ONE of the indices of the vecotor has value 1, indicating the actual input state corresponding to the index, other indices are 0
+            # Example: Vector = [0, 0, 1, 0, 0, ... 0] = State 2 & Vector = [0, 0, 0, 1, 0, ... 0] = State 3 and so on.
+            # This is done because the dataset for training the NN is small and uncorrelated. Without input shaping, NN never trains.
             state_vector = np.zeros(dqn_solver.observation_space)
             state_vector[state] = 1
             state_vector = np.reshape(state_vector,[1,dqn_solver.observation_space])

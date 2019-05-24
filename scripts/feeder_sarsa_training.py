@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Training script for the Q learning algorithm.
+Training script for the SARSA learning algorithm.
 Execute as a standalone python script to train the Q table
 
 REQUIRES:
@@ -12,6 +12,7 @@ OUTPUTS:
 The fully trained Q table and the relevant policy on screen and as .csv files in the same directory
 If run through launch file, .csv files go to tejas/resources directory, else .csv files go to same directory as script
 
+SOURCE:
 https://medium.com/swlh/introduction-to-reinforcement-learning-coding-sarsa-part-4-2d64d6e37617
 """
 

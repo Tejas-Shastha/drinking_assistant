@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# See README.md for more info.
+
 import rospy
 from tejas.srv import EnvStep, EnvStepRequest, EnvStepResponse
 import robot_stepper_client

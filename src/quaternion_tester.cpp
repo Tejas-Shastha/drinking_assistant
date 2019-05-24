@@ -1,3 +1,7 @@
+/**
+  * See README.md for more info.
+  */
+
 #include <ros/ros.h>
 #include "geometry_msgs/Quaternion.h"
 #include "tf/transform_datatypes.h"

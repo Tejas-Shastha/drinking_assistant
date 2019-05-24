@@ -111,7 +111,7 @@ Serves as a library used by other scripts to read/write CSV files on the disk.
 
 * `env.py`   
 
-This is the Markov Model of the drinking assistant robot. Does not run directly but is invoked by other scripts.
+This is the Markov Model of the drinking assistant robot. Does not run directly but is invoked by other scripts. Modeled to function similarly as the OpenAI Gym models.
 
 * `feeder_xx_training.py`    
 
@@ -129,7 +129,7 @@ The main part of the emulator. This script runs as the server providing the emul
 
 This script provides the interface of making use of the amulator. Is invoked by other scripts and its functions are made use of by the training scripts.
 
-* `test_model_xx.üy`
+* `test_xx.py`
 
 These scripts can be used to test the training procedure before actually starting it as well as the validity of model and emulator.
 

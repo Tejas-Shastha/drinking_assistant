@@ -1,3 +1,6 @@
+/**
+  * See README.md for more info.
+  */
 #include "ros/ros.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "mutex"

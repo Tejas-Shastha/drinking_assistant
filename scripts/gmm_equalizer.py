@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# See README.md for more info
+
 import numpy as np
 import random
 import csv

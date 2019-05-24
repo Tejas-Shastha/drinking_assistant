@@ -1,3 +1,10 @@
+/**
+  * See README.md for more info.
+  *
+  * This iteration of this node was used to test the IK solvers. They do not work.
+  * TODO: Figure out why.
+  *
+  */
 /// DRIVE FOR DURATION
 
 #include "ros/ros.h"
